@@ -15,6 +15,7 @@ typedef struct proc_struct
     int turnaround;
 
     // helpers
+    int rem_burst;
     int done;
 
 } PROC_TYPE;
@@ -43,13 +44,26 @@ void print_list(PROC_TYPE **list, size_t *nelems)
                "--------------------------------------------------\n");
         for (size_t i = 0; i < *nelems; i++)
         {
-            printf("%d\t%d\t%d\t%d\t%d\t%d\n",
-                   (*list + i)->id,
-                   (*list + i)->arrival,
-                   (*list + i)->burst,
-                   (*list + i)->start,
-                   (*list + i)->end,
-                   (*list + i)->turnaround);
+            if ((*list + i)->done)
+            {
+                printf("%d\t%d\t%d\t%d\t%d\t%d\n",
+                       (*list + i)->id,
+                       (*list + i)->arrival,
+                       (*list + i)->burst,
+                       (*list + i)->start,
+                       (*list + i)->end,
+                       (*list + i)->turnaround);
+            } 
+            else
+            {
+                printf("%d\t%d\t%d\t%c\t%c\t%c\n",
+                       (*list + i)->id,
+                       (*list + i)->arrival,
+                       (*list + i)->burst,
+                       NULL,
+                       NULL,
+                       NULL);
+            }
         }
     }
 }
@@ -60,7 +74,7 @@ void init_proc(PROC_TYPE **list, size_t *nelems)
 
     if (*list == NULL)
     {
-        printf("\nEnter burst number of processes: ");
+        printf("\nEnter total number of processes: ");
         scanf(" %d", &max_elems);
 
         *nelems = (size_t)max_elems;
@@ -72,7 +86,7 @@ void init_proc(PROC_TYPE **list, size_t *nelems)
             scanf(" %d", &((*list + i)->id));
             printf("Enter arrival cycle for Process %d: ", (*list + i)->id);
             scanf(" %d", &((*list + i)->arrival));
-            printf("Enter burst cycle for Process %d: ", (*list + i)->id);
+            printf("Enter total cycles for Process %d: ", (*list + i)->id);
             scanf(" %d", &((*list + i)->burst));
         }
         print_list(list, nelems);
@@ -170,15 +184,65 @@ void sched_sjf(PROC_TYPE **list, size_t *nelems)
     print_list(list, nelems);
 }
 
-void sched_srt(PROC_TYPE **list, size_t *nelem)
+void sched_srt(PROC_TYPE **list, size_t *nelems)
 {
-    return;
+    PROC_TYPE *current;
+    int unsched = 0;
+    int t = 0;
+
+    PROC_TYPE *running_proc;
+    int remaining_burst;
+
+    for (size_t i = 0; i < *nelems; i++)
+    {
+        (*list + i)->done = 0;
+        (*list + i)->rem_burst = (*list + i)->burst;
+        unsched++;
+    }
+
+    while ((*nelems - unsched) != *nelems)
+    {
+        remaining_burst = INT_MAX;
+        for (size_t i = 0; i < *nelems; i++)
+        {
+            current = (*list + i);
+
+            if (current->done != 1)
+            {
+                if (min(current->rem_burst, remaining_burst))
+                {
+                    if (current->arrival <= t)
+                    {
+                        running_proc = current;
+                        remaining_burst = running_proc->rem_burst;
+                    }
+                }
+            }
+        }
+
+        if (running_proc->rem_burst == running_proc->burst)
+        {
+            running_proc->start = t;
+        }
+
+        t++;
+        running_proc->rem_burst--;
+
+        if (running_proc->rem_burst == 0)
+        {
+            running_proc->end = t;
+            running_proc->turnaround = (running_proc->end - running_proc->arrival);
+            running_proc->done = 1;
+            unsched--;
+        }
+    }
+    print_list(list, nelems);
 }
 
 int main(int argc, char const *argv[])
 {
 
-    int option;
+    char option;
 
     PROC_TYPE *proc_list = NULL;
     size_t max_elems;
@@ -203,7 +267,7 @@ int main(int argc, char const *argv[])
         }
         else if (option == '4')
         {
-            // sched_srt(&proc_list, &max_elems);
+            sched_srt(&proc_list, &max_elems);
         }
         else if (option == '5')
         {
