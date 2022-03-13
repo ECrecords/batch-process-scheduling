@@ -7,7 +7,7 @@ typedef struct proc_struct
     // provided data
     int id;
     int arrival;
-    int total;
+    int burst;
 
     // calculated data
     int start;
@@ -46,7 +46,7 @@ void print_list(PROC_TYPE **list, size_t *nelems)
             printf("%d\t%d\t%d\t%d\t%d\t%d\n",
                    (*list + i)->id,
                    (*list + i)->arrival,
-                   (*list + i)->total,
+                   (*list + i)->burst,
                    (*list + i)->start,
                    (*list + i)->end,
                    (*list + i)->turnaround);
@@ -60,7 +60,7 @@ void init_proc(PROC_TYPE **list, size_t *nelems)
 
     if (*list == NULL)
     {
-        printf("\nEnter total number of processes: ");
+        printf("\nEnter burst number of processes: ");
         scanf(" %d", &max_elems);
 
         *nelems = (size_t)max_elems;
@@ -72,8 +72,8 @@ void init_proc(PROC_TYPE **list, size_t *nelems)
             scanf(" %d", &((*list + i)->id));
             printf("Enter arrival cycle for Process %d: ", (*list + i)->id);
             scanf(" %d", &((*list + i)->arrival));
-            printf("Enter total cycle for Process %d: ", (*list + i)->id);
-            scanf(" %d", &((*list + i)->total));
+            printf("Enter burst cycle for Process %d: ", (*list + i)->id);
+            scanf(" %d", &((*list + i)->burst));
         }
         print_list(list, nelems);
     }
@@ -91,7 +91,6 @@ void sched_fifo(PROC_TYPE **list, size_t *nelems)
 
     PROC_TYPE *running_proc;
     int earliest_arrival;
-    
 
     for (size_t i = 0; i < *nelems; i++)
     {
@@ -112,13 +111,12 @@ void sched_fifo(PROC_TYPE **list, size_t *nelems)
                 {
                     running_proc = current;
                     earliest_arrival = running_proc->arrival;
-
                 }
             }
         }
 
         running_proc->start = t;
-        t += running_proc->total;
+        t += running_proc->burst;
         running_proc->end = t;
         running_proc->turnaround = (running_proc->end - running_proc->arrival);
         running_proc->done = 1;
@@ -134,9 +132,7 @@ void sched_sjf(PROC_TYPE **list, size_t *nelems)
     int t = 0;
 
     PROC_TYPE *running_proc;
-    int earliest_arrival;
-    int shortest_job;
-    
+    int shortest_burst;
 
     for (size_t i = 0; i < *nelems; i++)
     {
@@ -144,32 +140,39 @@ void sched_sjf(PROC_TYPE **list, size_t *nelems)
         unsched++;
     }
 
-    for (size_t i = 0; i < *nelems; i++)
+    while ((*nelems - unsched) != *nelems)
+    {
+        shortest_burst = INT_MAX;
+        for (size_t i = 0; i < *nelems; i++)
         {
             current = (*list + i);
 
             if (current->done != 1)
             {
-                if (min(current->arrival, earliest_arrival))
+                if (min(current->burst, shortest_burst))
                 {
-                    running_proc = current;
-                    earliest_arrival = running_proc->arrival;
-
+                    if (current->arrival <= t)
+                    {
+                        running_proc = current;
+                        shortest_burst = running_proc->burst;
+                    }
                 }
             }
         }
 
-
-    while ((*nelems - unsched) != *nelems)
-    {
-
+        running_proc->start = t;
+        t += running_proc->burst;
+        running_proc->end = t;
+        running_proc->turnaround = (running_proc->end - running_proc->arrival);
+        running_proc->done = 1;
+        unsched--;
     }
     print_list(list, nelems);
 }
 
 void sched_srt(PROC_TYPE **list, size_t *nelem)
 {
-
+    return;
 }
 
 int main(int argc, char const *argv[])
@@ -200,13 +203,13 @@ int main(int argc, char const *argv[])
         }
         else if (option == '4')
         {
-            sched_srt(&proc_list, &max_elems);
+            // sched_srt(&proc_list, &max_elems);
         }
         else if (option == '5')
         {
             free(proc_list);
-            printf( "\nFreeing memory...\n"
-                    "Quiting Program...\n");
+            printf("\nFreeing memory...\n"
+                   "Quiting Program...\n");
             break;
         }
         else
