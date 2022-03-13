@@ -4,12 +4,19 @@
 
 typedef struct proc_struct
 {
+    // provided data
     int id;
     int arrival;
     int total;
+
+    // calculated data
     int start;
     int end;
     int turnaround;
+
+    // helpers
+    int done;
+
 } PROC_TYPE;
 
 void print_menu()
@@ -21,6 +28,11 @@ void print_menu()
            "3) Schedule processes with SJF algorithm\n"
            "4) Schedule processes with SRT algorithm\n"
            "5) Quit and free memory\n");
+}
+
+int min(int a, int b)
+{
+    return (a < b) ? 1 : 0;
 }
 
 void print_list(PROC_TYPE **list, size_t *nelems)
@@ -63,11 +75,101 @@ void init_proc(PROC_TYPE **list, size_t *nelems)
             printf("Enter total cycle for Process %d: ", (*list + i)->id);
             scanf(" %d", &((*list + i)->total));
         }
+        print_list(list, nelems);
     }
     else
     {
-        printf("\nಠ__ಠ NO\n");
+        printf("\nList already initialized\n");
     }
+}
+
+void sched_fifo(PROC_TYPE **list, size_t *nelems)
+{
+    PROC_TYPE *current;
+    int unsched = 0;
+    int t = 0;
+
+    PROC_TYPE *running_proc;
+    int earliest_arrival;
+    
+
+    for (size_t i = 0; i < *nelems; i++)
+    {
+        (*list + i)->done = 0;
+        unsched++;
+    }
+
+    while ((*nelems - unsched) != *nelems)
+    {
+        earliest_arrival = INT_MAX;
+        for (size_t i = 0; i < *nelems; i++)
+        {
+            current = (*list + i);
+
+            if (current->done != 1)
+            {
+                if (min(current->arrival, earliest_arrival))
+                {
+                    running_proc = current;
+                    earliest_arrival = running_proc->arrival;
+
+                }
+            }
+        }
+
+        running_proc->start = t;
+        t += running_proc->total;
+        running_proc->end = t;
+        running_proc->turnaround = (running_proc->end - running_proc->arrival);
+        running_proc->done = 1;
+        unsched--;
+    }
+    print_list(list, nelems);
+}
+
+void sched_sjf(PROC_TYPE **list, size_t *nelems)
+{
+    PROC_TYPE *current;
+    int unsched = 0;
+    int t = 0;
+
+    PROC_TYPE *running_proc;
+    int earliest_arrival;
+    int shortest_job;
+    
+
+    for (size_t i = 0; i < *nelems; i++)
+    {
+        (*list + i)->done = 0;
+        unsched++;
+    }
+
+    for (size_t i = 0; i < *nelems; i++)
+        {
+            current = (*list + i);
+
+            if (current->done != 1)
+            {
+                if (min(current->arrival, earliest_arrival))
+                {
+                    running_proc = current;
+                    earliest_arrival = running_proc->arrival;
+
+                }
+            }
+        }
+
+
+    while ((*nelems - unsched) != *nelems)
+    {
+
+    }
+    print_list(list, nelems);
+}
+
+void sched_srt(PROC_TYPE **list, size_t *nelem)
+{
+
 }
 
 int main(int argc, char const *argv[])
@@ -82,32 +184,34 @@ int main(int argc, char const *argv[])
     {
         print_menu();
         printf("\nEnter selection: ");
-        scanf(" %d", &option);
+        scanf(" %c", &option);
 
-        if (option == 1)
+        if (option == '1')
         {
             init_proc(&proc_list, &max_elems);
-            print_list(&proc_list, &max_elems);
         }
-        else if (option == 2)
+        else if (option == '2')
         {
-            /* code */
+            sched_fifo(&proc_list, &max_elems);
         }
-        else if (option == 3)
+        else if (option == '3')
         {
-            /* code */
+            sched_sjf(&proc_list, &max_elems);
         }
-        else if (option == 4)
+        else if (option == '4')
         {
-            /* code */
+            sched_srt(&proc_list, &max_elems);
         }
-        else if (option == 5)
+        else if (option == '5')
         {
+            free(proc_list);
+            printf( "\nFreeing memory...\n"
+                    "Quiting Program...\n");
             break;
         }
         else
         {
-            /* code */
+            printf("\nInvalid option\n");
         }
     }
 
